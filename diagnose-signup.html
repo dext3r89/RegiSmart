@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RegiSmart Signup Diagnostic</title>
+  <style>
+    body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+    .test-box { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .info { background: #d1ecf1; color: #0c5460; }
+    .loading { background: #e7f3ff; color: #004085; }
+    button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    code { background: #f5f5f5; padding: 2px 5px; }
+    pre { background: #f5f5f5; padding: 10px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Signup Diagnostic Tool</h1>
+  
+  <div class="test-box info">
+    <h3>⚠️ IMPORTANT</h3>
+    <p>This test uses <strong>NEW email addresses</strong> to avoid rate limiting.</p>
+    <p>If you see rate limit errors, wait 2-3 minutes before testing again.</p>
+  </div>
+
+  <div class="test-box">
+    <h3>Step 1: Test Connection</h3>
+    <button onclick="testConnection()">Test Supabase Connection</button>
+    <div id="step1-result"></div>
+  </div>
+
+  <div class="test-box">
+    <h3>Step 2: Test Auth Signup Only</h3>
+    <input type="email" id="test-email" placeholder="test@example.com" />
+    <button onclick="testAuthSignup()">Test Auth Signup (No Profile)</button>
+    <div id="step2-result"></div>
+  </div>
+
+  <div class="test-box">
+    <h3>Step 3: Check Profiles Table Permissions</h3>
+    <button onclick="testProfilesAccess()">Check Profiles Table</button>
+    <div id="step3-result"></div>
+  </div>
+
+  <div class="test-box">
+    <h3>Step 4: Full Signup Test</h3>
+    <input type="email" id="full-email" placeholder="newuser@example.com" />
+    <input type="text" id="full-name" placeholder="Full Name" />
+    <button onclick="testFullSignup()">Test Full Signup</button>
+    <div id="step4-result"></div>
+  </div>
+
+  <script type="module">
+    import supabase from './supabase.js';
+
+    window.testConnection = async function() {
+      const output = document.getElementById('step1-result');
+      output.innerHTML = '<p class="loading">Testing...</p>';
+      
+      try {
+        console.log('Supabase URL:', supabase.supabaseUrl);
+        output.innerHTML += `<p class="success">✅ Supabase client loaded</p>`;
+        output.innerHTML += `<p>Project URL: <code>${supabase.supabaseUrl}</code></p>`;
+        return true;
+      } catch (error) {
+        output.innerHTML = `<p class="error">❌ Connection failed: ${error.message}</p>`;
+        return false;
+      }
+    };
+
+    window.testAuthSignup = async function() {
+      const output = document.getElementById('step2-result');
+      const email = document.getElementById('test-email').value.trim();
+      
+      if (!email) {
+        output.innerHTML = '<p class="error">⚠️ Enter an email address</p>';
+        return;
+      }
+
+      output.innerHTML = '<p class="loading">Testing auth signup only...</p>';
+
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password: 'TestPassword123!',
+          options: {
+            data: { full_name: 'Test User' }
+          }
+        });
+
+        if (authError) {
+          if (authError.message.includes('429')) {
+            output.innerHTML = `<p class="error">❌ RATE LIMITED (429): ${authError.message}</p><p style="color: #721c24;">Wait 2-3 minutes and try again with a different email.</p>`;
+          } else if (authError.message.includes('already registered')) {
+            output.innerHTML = `<p class="error">❌ Email already registered: ${authError.message}</p><p style="color: #721c24;">Try with a different email address.</p>`;
+          } else {
+            output.innerHTML = `<p class="error">❌ Auth error: ${authError.message}</p>`;
+          }
+          return;
+        }
+
+        output.innerHTML = `
+          <p class="success">✅ Auth user created successfully!</p>
+          <p>User ID: <code>${authData.user.id}</code></p>
+          <p>Email: <code>${authData.user.email}</code></p>
+        `;
+      } catch (error) {
+        output.innerHTML = `<p class="error">❌ Exception: ${error.message}</p>`;
+      }
+    };
+
+    window.testProfilesAccess = async function() {
+      const output = document.getElementById('step3-result');
+      output.innerHTML = '<p class="loading">Checking profiles table...</p>';
+
+      try {
+        // Test read access
+        const { data: profiles, error: readError } = await supabase
+          .from('profiles')
+          .select('*')
+          .limit(1);
+
+        if (readError) {
+          output.innerHTML += `<p class="error">❌ Read error: ${readError.message}</p>`;
+          return;
+        }
+
+        output.innerHTML += `<p class="success">✅ Read access OK (${profiles.length} records)</p>`;
+
+        // Test insert permissions (as anon user)
+        const { data: insertTest, error: insertError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: crypto.randomUUID(),
+            full_name: 'Test',
+            role: 'parent'
+          }])
+          .select();
+
+        if (insertError) {
+          output.innerHTML += `<p class="error">❌ Insert failed - This is likely the problem!</p>`;
+          output.innerHTML += `<p><strong>Error:</strong> ${insertError.message}</p>`;
+          output.innerHTML += `<p style="color: #721c24;"><strong>Solution:</strong> Check RLS policies on profiles table. Anonymous users might not have INSERT permission.</p>`;
+          return;
+        }
+
+        output.innerHTML += `<p class="success">✅ Insert access OK</p>`;
+      } catch (error) {
+        output.innerHTML += `<p class="error">❌ Exception: ${error.message}</p>`;
+      }
+    };
+
+    window.testFullSignup = async function() {
+      const output = document.getElementById('step4-result');
+      const email = document.getElementById('full-email').value.trim();
+      const name = document.getElementById('full-name').value.trim();
+
+      if (!email || !name) {
+        output.innerHTML = '<p class="error">⚠️ Enter email and name</p>';
+        return;
+      }
+
+      output.innerHTML = '<p class="loading">Testing full signup...</p>';
+
+      try {
+        // Step A: Create auth user
+        output.innerHTML += '<p class="loading">Step A: Creating auth user...</p>';
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password: 'TestPassword123!',
+          options: { data: { full_name: name } }
+        });
+
+        if (authError) throw authError;
+        output.innerHTML += `<p class="success">✅ Auth user created: ${authData.user.id}</p>`;
+
+        // Step B: Create profile
+        output.innerHTML += '<p class="loading">Step B: Creating profile...</p>';
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: authData.user.id,
+            full_name: name,
+            role: 'parent'
+          }])
+          .select();
+
+        if (profileError) {
+          output.innerHTML += `<p class="error">❌ Profile creation failed!</p>`;
+          output.innerHTML += `<p><strong>Error:</strong> ${profileError.message}</p>`;
+          output.innerHTML += `<p style="color: #721c24;"><strong>Issue:</strong> RLS policies might be blocking profile creation.</p>`;
+          return;
+        }
+
+        output.innerHTML += `<p class="success">✅ Profile created!</p>`;
+        output.innerHTML += `<p class="success">✅✅ FULL SIGNUP SUCCESSFUL!</p>`;
+      } catch (error) {
+        output.innerHTML += `<p class="error">❌ Exception: ${error.message}</p>`;
+      }
+    };
+  </script>
+</body>
+</html>

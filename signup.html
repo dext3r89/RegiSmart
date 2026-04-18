@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RegiSmart – Create Account</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="styles.css" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- =============================================
+       SIGNUP PAGE
+       Captures parent account details + child info.
+       ============================================= -->
+  <div class="auth-wrapper" style="align-items: flex-start; padding: 30px 16px;">
+    <div class="auth-card card" style="max-width: 560px;">
+      <div class="card-body p-4 p-md-5">
+
+        <!-- Logo -->
+        <div class="auth-logo">🎒 RegiSmart</div>
+        <p class="auth-tagline">Create your parent account</p>
+
+        <!-- ==========================================
+             SECTION 1 – Parent Account
+             ========================================== -->
+        <div class="section-title" style="margin-top:0;">👤 Your Account Details</div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Your Name</label>
+            <input type="text" id="p-name" class="form-control" placeholder="e.g. Nomvula"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Your Surname</label>
+            <input type="text" id="p-surname" class="form-control" placeholder="e.g. Khumalo"/>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Email Address</label>
+          <input type="email" id="p-email" class="form-control" placeholder="nomvula@email.com"/>
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col">
+            <label class="form-label fw-bold">Password</label>
+            <input type="password" id="p-password" class="form-control" placeholder="Min. 6 characters"/>
+          </div>
+          <div class="col">
+            <label class="form-label fw-bold">Confirm Password</label>
+            <input type="password" id="p-password2" class="form-control" placeholder="Repeat password"/>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             SECTION 2 – Child / Student Details
+             ========================================== -->
+        <div class="section-title">🎒 Your Child's Details</div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Child's Name</label>
+            <input type="text" id="s-name" class="form-control" placeholder="e.g. Lethabo"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Child's Surname</label>
+            <input type="text" id="s-surname" class="form-control" placeholder="e.g. Khumalo"/>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Grade</label>
+          <select id="s-grade" class="form-select">
+            <option value="">-- Select a Grade --</option>
+            <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+            <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+            <option>Grade 7
+          </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold">Home Address</label>
+          <input type="text" id="s-address" class="form-control"
+                 placeholder="e.g. 12 Acacia Street, Soweto, 1804"/>
+        </div>
+
+        <p class="text-muted" style="font-size:0.85rem;">
+          💡 You can complete your family &amp; medical information later from the
+          <strong>Parent Dashboard</strong>.
+        </p>
+
+        <!-- Error / Success messages -->
+        <div id="signup-error"   class="alert alert-danger"  style="display:none;"></div>
+        <div id="signup-success" class="alert alert-success" style="display:none;"></div>
+
+        <!-- Submit -->
+        <button id="signup-btn" class="btn btn-primary w-100 mb-3" onclick="window.handleSignup()">
+          ✅ Create Account &amp; Register Child
+        </button>
+
+        <div class="auth-divider"></div>
+
+        <p class="text-center text-muted mb-0" style="font-size:0.9rem;">
+          Already have an account? <a href="login.html" class="fw-bold" style="color:#1a73e8;">Log in</a>
+        </p>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      signupParentAccount, registerStudent, cacheSessionForUI, joinNameParts,
+      storePendingStudentRegistration, loginUserAccount, getPendingStudentRegistration
+    } from './app.js';
+
+    window.handleSignup = async function() {
+      document.getElementById('signup-error').style.display = 'none';
+      document.getElementById('signup-success').style.display = 'none';
+
+      const firstName = document.getElementById('p-name').value.trim();
+      const surname   = document.getElementById('p-surname').value.trim();
+      const email     = document.getElementById('p-email').value.trim();
+      const password  = document.getElementById('p-password').value.trim();
+      const password2 = document.getElementById('p-password2').value.trim();
+      const sFirstName = document.getElementById('s-name').value.trim();
+      const sSurname   = document.getElementById('s-surname').value.trim();
+      const sGrade    = document.getElementById('s-grade').value.trim();
+      const sAddress  = document.getElementById('s-address').value.trim();
+      const name      = joinNameParts(firstName, surname);
+      const sName     = joinNameParts(sFirstName, sSurname);
+
+      // --- Validation ---
+      if (!firstName || !surname || !email || !password || !password2) {
+        document.getElementById('signup-error').style.display = 'block';
+        document.getElementById('signup-error').textContent = '⚠️ Please fill in all account fields.';
+        return;
+      }
+      if (password.length < 6) {
+        document.getElementById('signup-error').style.display = 'block';
+        document.getElementById('signup-error').textContent = '⚠️ Password must be at least 6 characters.';
+        return;
+      }
+      if (password !== password2) {
+        document.getElementById('signup-error').style.display = 'block';
+        document.getElementById('signup-error').textContent = '⚠️ Passwords do not match.';
+        return;
+      }
+      if (!sFirstName || !sSurname || !sGrade) {
+        document.getElementById('signup-error').style.display = 'block';
+        document.getElementById('signup-error').textContent = '⚠️ Please fill in your child\'s name, surname, and grade.';
+        return;
+      }
+
+      // Add loading state
+      const btn = document.getElementById('signup-btn');
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '⏳ Creating account...';
+
+      try {
+        // --- Create parent account in Supabase Auth & profiles table ---
+        const signupResult = await signupParentAccount(name, email, password);
+        if (!signupResult.success) {
+          document.getElementById('signup-error').style.display = 'block';
+          document.getElementById('signup-error').textContent = '❌ ' + signupResult.message;
+          btn.disabled = false;
+          btn.textContent = originalText;
+          return;
+        }
+
+        const parentId = signupResult.user.id;
+
+        // --- Create linked student record ---
+        const studentResult = await registerStudent(parentId, sName, sGrade, sAddress);
+        if (!studentResult.success) {
+          const isRlsIssue = /row-level security|violates row-level security policy/i.test(studentResult.message || '');
+
+          if (!isRlsIssue) {
+            document.getElementById('signup-error').style.display = 'block';
+            document.getElementById('signup-error').textContent = '❌ Account created but failed to register student: ' + studentResult.message;
+            btn.disabled = false;
+            btn.textContent = originalText;
+            return;
+          }
+
+          storePendingStudentRegistration(email, {
+            fullName: sName,
+            grade: sGrade,
+            homeAddress: sAddress
+          });
+
+          const loginRetry = await loginUserAccount(email, password);
+          const pendingStillExists = !!getPendingStudentRegistration();
+
+          if (loginRetry.success && !pendingStillExists) {
+            document.getElementById('signup-success').style.display = 'block';
+            document.getElementById('signup-success').textContent = '✅ Account created and your child was registered successfully. Redirecting to your dashboard…';
+            setTimeout(() => { window.location.href = 'parent.html'; }, 1500);
+            return;
+          }
+
+          document.getElementById('signup-success').style.display = 'block';
+          document.getElementById('signup-success').textContent =
+            '✅ Account created. If your email still needs verification, confirm it first and then log in. Your child will be registered automatically on your first successful login.';
+          btn.disabled = false;
+          btn.textContent = originalText;
+          return;
+        }
+
+        // --- Cache session for UI ---
+        cacheSessionForUI({
+          user: signupResult.user,
+          profile: signupResult.profile
+        });
+
+        // Show success and redirect
+        document.getElementById('signup-success').style.display = 'block';
+        document.getElementById('signup-success').textContent = '✅ Account created! Redirecting to your dashboard…';
+        
+        setTimeout(() => { window.location.href = 'parent.html'; }, 1500);
+      } catch (error) {
+        document.getElementById('signup-error').style.display = 'block';
+        document.getElementById('signup-error').textContent = '❌ Signup failed: ' + error.message;
+        btn.disabled = false;
+        btn.textContent = originalText;
+
+        if (error.status === 429) {
+      document.getElementById('signup-error').style.display = 'block';
+      document.getElementById('signup-error').textContent = 
+        '⏱️ Too many signup attempts. Please wait a moment and try again.';
+      
+      // Re-enable button after 30 seconds
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '✅ Create Account & Register Child';
+      }, 30000);
+      return;
+    }
+
+      }
+    };
+
+    // Allow pressing Enter to submit
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') window.handleSignup(); });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

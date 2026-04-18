@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RegiSmart – Welcome</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="styles.css" rel="stylesheet"/>
+  <style>
+    /* Hero section */
+    .hero {
+      background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+      color: #fff;
+      padding: 80px 24px 60px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 12px; }
+    .hero p  { font-size: 1.15rem; opacity: 0.88; max-width: 520px; margin: 0 auto 32px; }
+
+    .feature-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+      height: 100%;
+      transition: transform 0.2s;
+    }
+    .feature-card:hover { transform: translateY(-4px); }
+    .feature-icon { font-size: 2.8rem; margin-bottom: 14px; }
+    .feature-title { font-weight: 800; font-size: 1.1rem; color: #1a237e; margin-bottom: 8px; }
+    .feature-desc  { color: #64748b; font-size: 0.9rem; }
+
+    .portal-btn {
+      display: block;
+      border-radius: 14px;
+      padding: 18px 24px;
+      font-weight: 800;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: transform 0.15s, opacity 0.15s;
+      text-align: center;
+    }
+    .portal-btn:hover { transform: scale(1.02); opacity: 0.92; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <!-- =============================================
+       HERO SECTION
+       ============================================= -->
+  <div class="hero">
+    <div style="font-size:3.5rem; margin-bottom:16px;">🎒</div>
+    <h1>RegiSmart</h1>
+    <p>A smart, simple school registration and pupil pickup management system.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a href="login.html" class="btn btn-light fw-bold px-4" style="border-radius:10px; color:#1a237e;">
+        🔐 Log In
+      </a>
+      <a href="signup.html" class="btn fw-bold px-4"
+         style="background:rgba(255,255,255,0.2); color:#fff; border:2px solid rgba(255,255,255,0.5); border-radius:10px;">
+        ✏️ Sign Up as Parent
+      </a>
+    </div>
+  </div>
+
+  <!-- =============================================
+       FEATURES SECTION
+       ============================================= -->
+  <div class="container py-5 page-wrapper">
+    <h2 class="page-title text-center mb-2">How RegiSmart Works</h2>
+    <p class="page-subtitle text-center mb-5">Three portals, one smooth experience.</p>
+
+    <div class="row g-4 mb-5">
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <div class="feature-title">Admin Portal</div>
+          <div class="feature-desc">Register students, generate QR codes, and view all learner records at a glance.</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">👩‍🏫</div>
+          <div class="feature-title">Teacher Portal</div>
+          <div class="feature-desc">Check pupils in and out daily. Issue secure pickup codes that go straight to parents.</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">👨‍👩‍👧</div>
+          <div class="feature-title">Parent Portal</div>
+          <div class="feature-desc">Track your child's status in real time, complete family &amp; medical info, and confirm pickup safely.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portal Quick Access -->
+    <h2 class="page-title text-center mb-2">Quick Access Portals</h2>
+    <p class="page-subtitle text-center mb-4">Choose your portal to log in directly.</p>
+
+    <div class="row g-3 justify-content-center">
+      <div class="col-sm-4">
+        <a href="login.html" class="portal-btn" style="background:#1a73e8; color:#fff;">
+          🛡️ Admin Portal
+        </a>
+      </div>
+      <div class="col-sm-4">
+        <a href="login.html" class="portal-btn" style="background:#0f9d58; color:#fff;">
+          👩‍🏫 Teacher Portal
+        </a>
+      </div>
+      <div class="col-sm-4">
+        <a href="signup.html" class="portal-btn" style="background:#f9ab00; color:#fff;">
+          👨‍👩‍👧 Parent Sign-Up
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    RegiSmart &copy; 2025 – School Registration &amp; Pickup System 🎒
+  </footer>
+
+  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

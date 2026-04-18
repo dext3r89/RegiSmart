@@ -1,0 +1,298 @@
+/* =======================================================
+   RegiSmart – Shared Stylesheet
+   Applied to every page in the application.
+   ======================================================= */
+
+/* Google Font loaded in each HTML head, referenced here */
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: #f0f4f8;
+  min-height: 100vh;
+}
+
+/* =======================================================
+   NAVBAR
+   ======================================================= */
+.navbar {
+  background: linear-gradient(135deg, #1a73e8, #0d47a1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff !important;
+  letter-spacing: -0.5px;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-weight: 600;
+  border-radius: 8px;
+  margin: 0 3px;
+  transition: all 0.2s;
+}
+
+.nav-link:hover,
+.nav-link.active-page {
+  color: #fff !important;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* =======================================================
+   PAGE FADE-IN ANIMATION
+   ======================================================= */
+.page-wrapper {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =======================================================
+   CARDS
+   ======================================================= */
+.card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  border-radius: 16px 16px 0 0 !important;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* =======================================================
+   PAGE TITLES
+   ======================================================= */
+.page-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #1a237e;
+  margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+/* =======================================================
+   SECTION DIVIDER TITLES (inside forms)
+   ======================================================= */
+.section-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a237e;
+  border-bottom: 2px solid #e8edf5;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  margin-top: 24px;
+}
+
+/* =======================================================
+   STATUS BADGES
+   ======================================================= */
+.status-badge {
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.status-at-school   { background-color: #d1fae5; color: #065f46; }
+.status-pending     { background-color: #fef3c7; color: #92400e; }
+.status-checked-out { background-color: #fee2e2; color: #991b1b; }
+
+/* =======================================================
+   BUTTONS
+   ======================================================= */
+.btn {
+  border-radius: 10px;
+  font-weight: 700;
+  padding: 10px 22px;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary  { background-color: #1a73e8; border-color: #1a73e8; }
+.btn-primary:hover { background-color: #1558b0; }
+.btn-success  { background-color: #0f9d58; border-color: #0f9d58; }
+.btn-warning  { background-color: #f9ab00; border-color: #f9ab00; color: #fff; }
+
+/* =======================================================
+   FORM INPUTS
+   ======================================================= */
+.form-control,
+.form-select {
+  border-radius: 10px;
+  border: 1.5px solid #dde3f0;
+  padding: 10px 14px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15);
+}
+
+textarea.form-control { resize: vertical; min-height: 80px; }
+
+/* =======================================================
+   QR CODE OUTPUT BOX
+   ======================================================= */
+.qr-output-box {
+  border: 2px dashed #c7d2e8;
+  border-radius: 14px;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8faff;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* =======================================================
+   STUDENT ROW (lists)
+   ======================================================= */
+.student-row {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  border: 1.5px solid #e8edf5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  transition: border-color 0.2s;
+}
+
+.student-row:hover { border-color: #1a73e8; }
+
+.student-name  { font-weight: 700; color: #1a237e; font-size: 1rem; }
+.student-grade { font-size: 0.85rem; color: #64748b; }
+
+/* =======================================================
+   INFO BOX (highlighted info panel)
+   ======================================================= */
+.info-box {
+  background: #eff6ff;
+  border-left: 4px solid #1a73e8;
+  border-radius: 10px;
+  padding: 14px 18px;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+/* =======================================================
+   VERIFICATION CODE DISPLAY
+   ======================================================= */
+.code-display {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 12px;
+  color: #1a237e;
+  background: #eff6ff;
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+}
+
+/* =======================================================
+   EMPTY STATE
+   ======================================================= */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+}
+
+.empty-state .icon { font-size: 3rem; margin-bottom: 10px; }
+
+/* =======================================================
+   AUTH PAGES (login / signup)
+   ======================================================= */
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 16px;
+  background: linear-gradient(135deg, #e8f0fe 0%, #f0f4f8 100%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(26, 115, 232, 0.12);
+}
+
+.auth-logo {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1a237e;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.auth-tagline {
+  color: #64748b;
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.auth-divider {
+  border-top: 1.5px solid #e8edf5;
+  margin: 20px 0;
+}
+
+/* =======================================================
+   DETAIL VIEW GRID (parent profile info)
+   ======================================================= */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 576px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}
+
+/* =======================================================
+   FOOTER
+   ======================================================= */
+footer {
+  background: #fff;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+  padding: 14px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin-top: 40px;
+}
+
+/* =======================================================
+   ROLE BADGE (on nav)
+   ======================================================= */
+.role-badge {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border-radius: 50px;
+  padding: 4px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}

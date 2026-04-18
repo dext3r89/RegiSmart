@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RegiSmart – Login</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="styles.css" rel="stylesheet"/>
+  <style>
+    .role-tab-btn {
+      width: 100%;
+      padding: 12px 8px;
+      border-radius: 12px;
+      border: 2px solid #dde3f0;
+      background: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+      line-height: 1.4;
+    }
+    .role-tab-btn:hover { border-color: #1a73e8; color: #1a73e8; background: #eff6ff; }
+    .role-tab-btn.sel-parent  { background:#1a73e8; border-color:#1a73e8; color:#fff; }
+    .role-tab-btn.sel-teacher { background:#0f9d58; border-color:#0f9d58; color:#fff; }
+    .role-tab-btn.sel-admin   { background:#1a237e; border-color:#1a237e; color:#fff; }
+    #session-banner {
+      background:#fef3c7; border:1.5px solid #f9ab00;
+      border-radius:12px; padding:14px 18px; margin-bottom:20px; display:none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <div class="auth-card card">
+    <div class="card-body p-4 p-md-5">
+
+      <div class="auth-logo">🎒 RegiSmart</div>
+      <p class="auth-tagline">School Registration &amp; Pickup System</p>
+
+      <!-- EXISTING SESSION BANNER -->
+      <div id="session-banner">
+        <p class="mb-2 fw-bold" style="color:#92400e;" id="session-msg"></p>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-warning btn-sm text-white fw-bold" id="session-continue-btn">
+            ▶ Continue
+          </button>
+          <button class="btn btn-outline-secondary btn-sm fw-bold" onclick="switchUser()">
+            🔄 Switch account
+          </button>
+        </div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="login-form-area">
+
+        <p class="fw-bold mb-2" style="color:#1a237e;">Select your role to log in:</p>
+        <div class="row g-2 mb-4">
+          <div class="col-4">
+            <button class="role-tab-btn" id="tab-parent" onclick="setRole('parent')">
+              👨‍👩‍👧<br/>Parent
+            </button>
+          </div>
+          <div class="col-4">
+            <button class="role-tab-btn" id="tab-teacher" onclick="setRole('teacher')">
+              👩‍🏫<br/>Teacher
+            </button>
+          </div>
+          <div class="col-4">
+            <button class="role-tab-btn" id="tab-admin" onclick="setRole('admin')">
+              🛡️<br/>Admin
+            </button>
+          </div>
+        </div>
+
+        <div id="demo-hint" class="info-box mb-3" style="display:none; font-size:0.85rem;"></div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Email Address</label>
+          <input type="email" id="login-email" class="form-control" placeholder="you@example.com"/>
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-bold">Password</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••"/>
+        </div>
+
+        <div id="login-error" class="alert alert-danger" style="display:none;"></div>
+
+        <button class="btn btn-primary w-100 mb-3" id="login-btn" onclick="handleLogin()">
+          🔐 Log In
+        </button>
+
+        <div class="auth-divider"></div>
+        <p class="text-center text-muted mb-0" style="font-size:0.9rem;">
+          New parent? <a href="signup.html" class="fw-bold" style="color:#1a73e8;">Create an account</a>
+        </p>
+
+      </div><!-- end login-form-area -->
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { getCachedSession, loginUserAccount, logoutUserAccount, cacheSessionForUI } from './app.js';
+
+  let selectedRole = null;
+
+  // On load: show banner if session exists
+  async function checkExistingSession() {
+    const session = getCachedSession();
+    if (!session) return;
+    
+    const banner = document.getElementById('session-banner');
+    banner.style.display = 'block';
+    const labels = { admin:'🛡️ Admin', teacher:'👩‍🏫 Teacher', parent:'👨‍👩‍👧 Parent' };
+    document.getElementById('session-msg').textContent =
+      'Already logged in as ' + labels[session.role] + ': ' + session.name;
+    document.getElementById('session-continue-btn').onclick = () => redirectByRole(session.role);
+    document.getElementById('login-form-area').style.display = 'none';
+  }
+
+  checkExistingSession();
+
+  window.switchUser = async function() {
+    await logoutUserAccount();
+    document.getElementById('session-banner').style.display = 'none';
+    document.getElementById('login-form-area').style.display = 'block';
+  };
+
+  window.setRole = function(role) {
+    selectedRole = role;
+    ['parent','teacher','admin'].forEach(r => {
+      document.getElementById('tab-' + r).className = 'role-tab-btn';
+    });
+    document.getElementById('tab-' + role).className = 'role-tab-btn sel-' + role;
+
+    const colors = { parent:'#1a73e8', teacher:'#0f9d58', admin:'#1a237e' };
+    const btn = document.getElementById('login-btn');
+    btn.style.background  = colors[role];
+    btn.style.borderColor = colors[role];
+
+    const hint = document.getElementById('demo-hint');
+    if (role === 'teacher') {
+      hint.style.display = 'block';
+      hint.innerHTML = '🔑 Demo credentials pre-filled below — just click <strong>Log In</strong>.';
+      document.getElementById('login-email').value    = 'teacher@school.ac.za';
+      document.getElementById('login-password').value = 'teacher123';
+    } else if (role === 'admin') {
+      hint.style.display = 'block';
+      hint.innerHTML = '🔑 Demo credentials pre-filled below — just click <strong>Log In</strong>.';
+      document.getElementById('login-email').value    = 'admin@school.ac.za';
+      document.getElementById('login-password').value = 'admin123';
+    } else {
+      hint.style.display = 'none';
+      document.getElementById('login-email').value    = '';
+      document.getElementById('login-password').value = '';
+    }
+    document.getElementById('login-error').style.display = 'none';
+  };
+
+  window.handleLogin = async function() {
+    document.getElementById('login-error').style.display = 'none';
+    
+    if (!selectedRole) {
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('login-error').textContent = '⚠️ Please click one of the three role buttons above first (Parent, Teacher, or Admin).';
+      return;
+    }
+
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+
+    if (!email || !password) {
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('login-error').textContent = '⚠️ Please enter your email and password.';
+      return;
+    }
+
+    // Add loading state
+    const btn = document.getElementById('login-btn');
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ Logging in...';
+
+    try {
+      const result = await loginUserAccount(email, password);
+      
+      if (!result.success) {
+        document.getElementById('login-error').style.display = 'block';
+        document.getElementById('login-error').textContent = '❌ ' + result.message;
+        btn.disabled = false;
+        btn.textContent = originalText;
+        return;
+      }
+
+      // Verify role matches selected role
+      const cachedSession = getCachedSession();
+      if (cachedSession.role !== selectedRole) {
+        document.getElementById('login-error').style.display = 'block';
+        document.getElementById('login-error').textContent = '❌ This account is registered as ' + cachedSession.role.toUpperCase() + ', but you selected ' + selectedRole.toUpperCase() + '.';
+        btn.disabled = false;
+        btn.textContent = originalText;
+        return;
+      }
+
+      redirectByRole(cachedSession.role);
+    } catch (error) {
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('login-error').textContent = '❌ Login failed: ' + error.message;
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  };
+
+  window.redirectByRole = function(role) {
+    if (role === 'teacher')      window.location.href = 'teacher.html';
+    else if (role === 'admin')   window.location.href = 'admin.html';
+    else                         window.location.href = 'parent.html';
+  };
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') window.handleLogin(); });
+
+  // Pre-select role from URL param
+  (function () {
+    const role = new URLSearchParams(window.location.search).get('role');
+    if (['admin','teacher','parent'].includes(role)) window.setRole(role);
+  })();
+</script>

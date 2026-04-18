@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RegiSmart – Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="styles.css" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    .stat-chip { background:#fff; border-radius:14px; padding:16px 12px;
+                 text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    .stat-chip .num { font-size:2rem; font-weight:800; line-height:1; }
+    .stat-chip .lbl { font-size:0.78rem; color:#64748b; font-weight:600; margin-top:4px; }
+
+    .act-btn { border:none; border-radius:8px; padding:5px 12px;
+               font-family:'Nunito',sans-serif; font-weight:700; font-size:0.78rem;
+               cursor:pointer; transition:opacity 0.15s,transform 0.1s; }
+    .act-btn:active { transform:scale(0.95); }
+    .act-btn:hover  { opacity:0.85; }
+    .act-view   { background:#eff6ff; color:#1a73e8; }
+    .act-edit   { background:#fef3c7; color:#92400e; }
+    .act-qr     { background:#d1fae5; color:#065f46; }
+    .act-delete { background:#fee2e2; color:#991b1b; }
+
+    .filter-chip { font-size:0.82rem; padding:4px 14px; border-radius:50px;
+                   border:1.5px solid #dde3f0; background:#fff; color:#64748b;
+                   font-family:'Nunito',sans-serif; font-weight:700; cursor:pointer; transition:all 0.15s; }
+    .filter-chip.active,
+    .filter-chip:hover { background:#1a73e8; border-color:#1a73e8; color:#fff; }
+
+    .skeleton { background:linear-gradient(90deg,#f0f4f8 25%,#e2e8f0 50%,#f0f4f8 75%);
+                background-size:200% 100%; animation:shimmer 1.2s infinite;
+                border-radius:8px; height:56px; margin-bottom:10px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    #parent-dropdown {
+      position:absolute; z-index:1050; width:100%; background:#fff;
+      border:1.5px solid #dde3f0; border-radius:10px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.1); max-height:220px; overflow-y:auto; margin-top:4px;
+    }
+    #parent-dropdown .dropdown-item {
+      padding:10px 14px; font-family:'Nunito',sans-serif; font-size:0.92rem;
+      cursor:pointer; color:#1a237e; font-weight:600; transition:background 0.12s;
+    }
+    #parent-dropdown .dropdown-item:hover { background:#eff6ff; }
+    #parent-dropdown .dropdown-item.text-muted { color:#94a3b8 !important; font-weight:400; cursor:default; }
+
+    #selected-parent-chip {
+      display:none; align-items:center; gap:8px; background:#d1fae5;
+      border:1.5px solid #6ee7b7; border-radius:10px; padding:8px 14px; margin-top:8px;
+      font-weight:700; font-size:0.88rem; color:#065f46;
+    }
+    #selected-parent-chip button {
+      background:none; border:none; color:#065f46; font-size:1rem;
+      line-height:1; cursor:pointer; padding:0 2px; font-weight:800; margin-left:auto;
+    }
+    #selected-parent-chip button:hover { color:#991b1b; }
+
+    /* Transport status colours (shared with other pages) */
+    .status-pending-transport     { background:#ede9fe; color:#5b21b6; }
+    .status-checked-out-transport { background:#bbf7d0; color:#064e3b; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark py-2">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">🎒 RegiSmart</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link active-page" href="admin.html">🛡️ Admin</a>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center" id="nav-user"></div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4 page-wrapper">
+
+    <div class="mb-4">
+      <h1 class="page-title">Admin Dashboard</h1>
+      <p class="page-subtitle">Register students, generate QR codes, and manage all learner records.</p>
+    </div>
+
+    <div id="page-error" class="alert alert-danger mb-3" style="display:none;"></div>
+
+    <!-- STATS ROW (6 cols on md+, 3 cols on sm) -->
+    <div class="row g-3 mb-4" id="stats-row">
+      <div class="col-6 col-md-2"><div class="skeleton"></div></div>
+      <div class="col-6 col-md-2"><div class="skeleton"></div></div>
+      <div class="col-6 col-md-2"><div class="skeleton"></div></div>
+      <div class="col-6 col-md-2"><div class="skeleton"></div></div>
+      <div class="col-6 col-md-2"><div class="skeleton"></div></div>
+      <div class="col-6 col-md-2"><div class="skeleton"></div></div>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- LEFT: ADD STUDENT -->
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header bg-primary text-white">➕ Register New Student</div>
+          <div class="card-body p-4">
+
+            <div class="row g-2 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Student Name <span class="text-danger">*</span></label>
+                <input type="text" id="s-name" class="form-control" placeholder="e.g. Thabo"/>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Student Surname <span class="text-danger">*</span></label>
+                <input type="text" id="s-surname" class="form-control" placeholder="e.g. Mokoena"/>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-bold">Grade <span class="text-danger">*</span></label>
+              <select id="s-grade" class="form-select">
+                <option value="">-- Select a Grade --</option>
+                <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+                <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+                <option>Grade 7</option>
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="form-label fw-bold">Home Address</label>
+              <input type="text" id="s-address" class="form-control" placeholder="e.g. 12 Acacia Street, Soweto"/>
+            </div>
+
+            <!-- Parent search -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Link to Parent Account <span class="text-danger">*</span></label>
+              <div style="position:relative;">
+                <div class="input-group">
+                  <span class="input-group-text"
+                        style="border-radius:10px 0 0 10px;background:#f8faff;border:1.5px solid #dde3f0;">🔍</span>
+                  <input type="text" id="parent-search-input" class="form-control"
+                         placeholder="Type parent name to search…" autocomplete="off"
+                         oninput="window.onParentSearchInput()"
+                         style="border-radius:0 10px 10px 0;"/>
+                  <span id="parent-search-spinner" class="input-group-text"
+                        style="display:none;border-radius:0 10px 10px 0;border:1.5px solid #dde3f0;background:#f8faff;">
+                    <span class="spinner-border spinner-border-sm text-primary"></span>
+                  </span>
+                </div>
+                <div id="parent-dropdown" style="display:none;"></div>
+              </div>
+              <div id="selected-parent-chip">
+                <span>✅ Selected:</span>
+                <span id="selected-parent-name"></span>
+                <button type="button" title="Clear" onclick="window.clearParentSelection()">✕</button>
+              </div>
+              <p class="text-muted mt-1 mb-0" style="font-size:0.8rem;">
+                ℹ️ Only registered parent accounts appear. Parents sign up at
+                <a href="signup.html" target="_blank">signup.html</a>.
+              </p>
+            </div>
+
+            <div id="add-error"   class="alert alert-danger"  style="display:none;"></div>
+            <div id="add-success" class="alert alert-success" style="display:none;"></div>
+
+            <button class="btn btn-primary w-100" id="add-btn" onclick="window.addStudent()">
+              📲 Save &amp; Generate QR Code
+            </button>
+          </div>
+        </div>
+
+        <!-- QR OUTPUT -->
+        <div class="card mt-4">
+          <div class="card-header bg-success text-white">📱 Last Generated QR Code</div>
+          <div class="card-body p-4">
+            <div id="qr-output" class="qr-output-box">
+              <div style="text-align:center;color:#94a3b8;">
+                <div style="font-size:3rem;">📷</div>
+                <p class="mt-2 mb-0">Add a student to generate their QR code</p>
+              </div>
+            </div>
+            <div id="qr-info" class="info-box mt-3" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: STUDENT LIST -->
+      <div class="col-lg-7">
+        <div class="card">
+          <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>🧑‍🤝‍🧑 Registered Students</span>
+            <div class="d-flex gap-2 align-items-center">
+              <span id="student-count" class="badge bg-light text-dark">Loading…</span>
+              <button class="btn btn-sm text-white fw-bold"
+                      style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);"
+                      onclick="window.refreshList()">🔄</button>
+            </div>
+          </div>
+          <div class="card-body p-3">
+
+            <div class="input-group mb-3">
+              <span class="input-group-text" style="border-radius:10px 0 0 10px;background:#f8faff;">🔎</span>
+              <input type="text" id="admin-search" class="form-control"
+                     placeholder="Search by name or grade…"
+                     oninput="window.renderList()"
+                     style="border-radius:0 10px 10px 0;"/>
+            </div>
+
+            <!-- Filter chips — now includes transport statuses -->
+            <div class="d-flex gap-2 mb-3 flex-wrap">
+              <button class="filter-chip active" onclick="window.setFilter('all',this)">All</button>
+              <button class="filter-chip" onclick="window.setFilter('at-school',this)">🟢 At School</button>
+              <button class="filter-chip" onclick="window.setFilter('pending',this)">🟡 Pending</button>
+              <button class="filter-chip" onclick="window.setFilter('transport',this)">🟣 Transport</button>
+              <button class="filter-chip" onclick="window.setFilter('checked-out',this)">🔴 Checked Out</button>
+            </div>
+
+            <div id="admin-student-list">
+              <div class="skeleton"></div>
+              <div class="skeleton"></div>
+              <div class="skeleton"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VIEW DETAIL MODAL -->
+  <div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content" style="border-radius:16px;border:none;">
+        <div class="modal-header bg-primary text-white" style="border-radius:16px 16px 0 0;">
+          <h5 class="modal-title fw-bold" id="detail-title">Student Details</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4" id="detail-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:16px;border:none;">
+        <div class="modal-header bg-warning text-white" style="border-radius:16px 16px 0 0;">
+          <h5 class="modal-title fw-bold">✏️ Edit Student</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <input type="hidden" id="edit-id"/>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Name <span class="text-danger">*</span></label>
+              <input type="text" id="edit-name" class="form-control"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Surname <span class="text-danger">*</span></label>
+              <input type="text" id="edit-surname" class="form-control"/>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Grade <span class="text-danger">*</span></label>
+            <select id="edit-grade" class="form-select">
+              <option value="">-- Select Grade --</option>
+              <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+              <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+              <option>Grade 7</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Home Address</label>
+            <input type="text" id="edit-address" class="form-control"/>
+          </div>
+          <div id="edit-error" class="alert alert-danger" style="display:none;"></div>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #e8edf5;">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-warning text-white fw-bold" id="edit-save-btn"
+                  onclick="window.saveEdit()">💾 Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE MODAL -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:16px;border:none;">
+        <div class="modal-header bg-danger text-white" style="border-radius:16px 16px 0 0;">
+          <h5 class="modal-title fw-bold">🗑 Remove Student</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 text-center">
+          <div style="font-size:3rem;margin-bottom:12px;">⚠️</div>
+          <p class="fw-bold fs-5 mb-1" id="delete-name-display"></p>
+          <p class="text-muted mb-0">
+            This will permanently remove this student and all their records.<br/>
+            <strong>This cannot be undone.</strong>
+          </p>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #e8edf5;">
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-danger fw-bold" id="confirm-delete-btn"
+                  onclick="window.confirmDelete()">🗑 Yes, Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR MODAL -->
+  <div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:16px;border:none;">
+        <div class="modal-header bg-success text-white" style="border-radius:16px 16px 0 0;">
+          <h5 class="modal-title fw-bold" id="qr-modal-title">📱 Student QR Code</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 text-center" id="qr-modal-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>RegiSmart &copy; 2025 – Admin Portal 🛡️</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script type="module">
+    import {
+      guardPage, renderNavUser, getCachedSession,
+      getStatusClass, searchParents, joinNameParts, splitFullName
+    } from './app.js';
+
+    import supabase from './supabase.js';
+    import { createStudent, updateStudent, getFamilyDetails, getMedicalInfo } from './supabase.js';
+
+    // =============================================
+    // STATE
+    // =============================================
+    let allStudents        = [];
+    let activeFilter       = 'all';
+    let pendingDelId       = null;
+    let selectedParentId   = null;
+    let selectedParentName = null;
+    let parentSearchTimer  = null;
+    let detailModal, editModal, deleteModal, qrModal;
+
+    // =============================================
+    // INIT
+    // =============================================
+    async function initPage() {
+      const guard = await guardPage(['admin']);
+      if (!guard) return;
+      renderNavUser();
+      detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+      editModal   = new bootstrap.Modal(document.getElementById('editModal'));
+      deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+      qrModal     = new bootstrap.Modal(document.getElementById('qrModal'));
+      await refreshList();
+    }
+
+    // =============================================
+    // LOAD STUDENTS  (now includes transport_profiles)
+    // =============================================
+    async function loadAllStudents() {
+      try {
+        const { data, error } = await supabase
+          .from('students')
+          .select(`
+            id, full_name, grade, home_address, parent_id,
+            attendance_logs    ( status, updated_at ),
+            transport_profiles ( is_active, transport_type, driver_name, vehicle_reg )
+          `)
+          .order('full_name');
+
+        if (error) throw error;
+
+        allStudents = (data || []).map(s => {
+          const logs = (s.attendance_logs || []).sort(
+            (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+          );
+          const transport = Array.isArray(s.transport_profiles)
+            ? (s.transport_profiles[0] || null)
+            : (s.transport_profiles || null);
+          return {
+            ...s,
+            currentStatus: logs[0]?.status || 'At School',
+            lastUpdated:   logs[0]?.updated_at || null,
+            transport
+          };
+        });
+
+        return { success: true };
+      } catch (err) {
+        return { success: false, message: err.message };
+      }
+    }
+
+    window.refreshList = async function () {
+      const result = await loadAllStudents();
+      if (!result.success) {
+        document.getElementById('page-error').style.display = 'block';
+        document.getElementById('page-error').textContent   =
+          '❌ Failed to load students: ' + result.message;
+        return;
+      }
+      renderStats();
+      renderList();
+    };
+
+    // =============================================
+    // STATS  (all 5 statuses)
+    // =============================================
+    function renderStats() {
+      const total          = allStudents.length;
+      const atSchool       = allStudents.filter(s => s.currentStatus === 'At School').length;
+      const pendingPickup  = allStudents.filter(s => s.currentStatus === 'Pending Pickup').length;
+      const pendingTransp  = allStudents.filter(s => s.currentStatus === 'Pending Transport').length;
+      const checkedOut     = allStudents.filter(s => s.currentStatus === 'Checked Out').length;
+      const checkedOutTrn  = allStudents.filter(s => s.currentStatus === 'Checked Out (Transport)').length;
+
+      document.getElementById('stats-row').innerHTML = `
+        ${chip(total,         'Total',             '#1a73e8')}
+        ${chip(atSchool,      'At School',         '#0f9d58')}
+        ${chip(pendingPickup, 'Pending Pickup',    '#f9ab00')}
+        ${chip(pendingTransp, 'Pending Transport', '#7c3aed')}
+        ${chip(checkedOut,    'Checked Out',       '#e53935')}
+        ${chip(checkedOutTrn, 'Out (Transport)',   '#059669')}`;
+    }
+
+    function chip(n, lbl, color) {
+      return `<div class="col-6 col-md-2"><div class="stat-chip">
+        <div class="num" style="color:${color};">${n}</div>
+        <div class="lbl">${lbl}</div>
+      </div></div>`;
+    }
+
+    // =============================================
+    // FILTER CHIPS
+    // =============================================
+    window.setFilter = function (f, btn) {
+      activeFilter = f;
+      document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderList();
+    };
+
+    function normalizeStatus(status) {
+      return String(status || 'At School').trim().toLowerCase();
+    }
+
+    function matchesFilter(student, filter) {
+      const status = normalizeStatus(student.currentStatus);
+      switch (filter) {
+        case 'all':
+          return true;
+        case 'at-school':
+          return status === 'at school';
+        case 'pending':
+          return status === 'pending pickup' || status === 'pending transport';
+        case 'transport':
+          return status === 'pending transport' ||
+            status === 'checked out (transport)' ||
+            !!student.transport?.is_active;
+        case 'checked-out':
+          return status === 'checked out' || status === 'checked out (transport)';
+        default:
+          return status === String(filter || '').trim().toLowerCase();
+      }
+    }
+
+    // =============================================
+    // RENDER LIST
+    // =============================================
+    window.renderList = function () {
+      const query     = (document.getElementById('admin-search').value || '').trim().toLowerCase();
+      const container = document.getElementById('admin-student-list');
+      const total     = allStudents.length;
+
+      document.getElementById('student-count').textContent =
+        total + ' student' + (total !== 1 ? 's' : '');
+
+      let filtered = allStudents;
+
+      if (query) {
+        filtered = filtered.filter(s =>
+          s.full_name.toLowerCase().includes(query) ||
+          s.grade.toLowerCase().includes(query)
+        );
+      }
+
+      filtered = filtered.filter(s => matchesFilter(s, activeFilter));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state">
+          <div class="icon">🏫</div>
+          <p>${total === 0
+            ? 'No students registered yet. Use the form on the left to add one.'
+            : 'No students match your search or filter.'}</p>
+        </div>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(s => {
+        // Transport badge shown if transport profile exists and is active
+        const transportBadge = s.transport?.is_active
+          ? `<span class="badge ms-1" style="background:#ede9fe;color:#5b21b6;font-size:0.7rem;">🚐 ${s.transport.transport_type || 'Transport'}</span>`
+          : '';
+
+        // Pickup method indicator based on status
+        let pickupTag = '';
+        if (s.currentStatus === 'Pending Transport' || s.currentStatus === 'Checked Out (Transport)') {
+          pickupTag = `<span class="badge ms-1" style="background:#7c3aed;color:#fff;font-size:0.68rem;">Transport Pickup</span>`;
+        } else if (s.currentStatus === 'Pending Pickup' || s.currentStatus === 'Checked Out') {
+          pickupTag = `<span class="badge ms-1" style="background:#1a73e8;color:#fff;font-size:0.68rem;">Parent Pickup</span>`;
+        }
+
+        html += `
+          <div class="student-row" id="row-${s.id}">
+            <div style="min-width:0;flex:1;">
+              <div class="student-name">
+                ${s.full_name} ${transportBadge}
+              </div>
+              <div class="student-grade">
+                ${s.grade}
+                ${s.home_address ? ` &nbsp;·&nbsp; <span style="color:#94a3b8;">${s.home_address}</span>` : ''}
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <span class="status-badge ${getStatusClass(s.currentStatus)}"
+                    style="font-size:0.78rem;padding:4px 12px;">${s.currentStatus}</span>
+              ${pickupTag}
+            </div>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <button class="act-btn act-view"   onclick="window.viewStudent('${s.id}')">👁 View</button>
+              <button class="act-btn act-edit"   onclick="window.openEdit('${s.id}')">✏️ Edit</button>
+              <button class="act-btn act-qr"     onclick="window.showQR('${s.id}')">📱 QR</button>
+              <button class="act-btn act-delete" onclick="window.openDelete('${s.id}')">🗑 Remove</button>
+            </div>
+          </div>`;
+      });
+
+      container.innerHTML = html;
+    };
+
+    // =============================================
+    // ADD STUDENT
+    // =============================================
+    window.addStudent = async function () {
+      const errEl  = document.getElementById('add-error');
+      const succEl = document.getElementById('add-success');
+      const btn    = document.getElementById('add-btn');
+      errEl.style.display = 'none'; succEl.style.display = 'none';
+
+      const firstName = (document.getElementById('s-name').value || '').trim();
+      const surname = (document.getElementById('s-surname').value || '').trim();
+      const name    = joinNameParts(firstName, surname);
+      const grade   = (document.getElementById('s-grade').value   || '').trim();
+      const address = (document.getElementById('s-address').value || '').trim();
+
+      if (!firstName || !surname)  { errEl.style.display = 'block'; errEl.textContent = '⚠️ Please enter the student name and surname.'; return; }
+      if (!grade) { errEl.style.display = 'block'; errEl.textContent = '⚠️ Please select a grade.'; return; }
+      if (!selectedParentId) {
+        errEl.style.display = 'block';
+        errEl.textContent = '⚠️ Please select a parent to link this student.';
+        document.getElementById('parent-search-input').focus();
+        return;
+      }
+
+      btn.disabled = true; btn.textContent = '⏳ Saving…';
+
+      try {
+        const result = await createStudent(selectedParentId, name, grade, address);
+        if (!result.success) {
+          errEl.style.display = 'block'; errEl.textContent = '❌ ' + result.error; return;
+        }
+
+        generateQRPanel(result.student);
+        const linkedParentName = selectedParentName;
+
+        document.getElementById('s-name').value    = '';
+        document.getElementById('s-surname').value = '';
+        document.getElementById('s-grade').value   = '';
+        document.getElementById('s-address').value = '';
+        window.clearParentSelection();
+
+        succEl.style.display = 'block';
+        succEl.textContent   = `✅ ${name} registered and linked to ${linkedParentName}.`;
+        setTimeout(() => { succEl.style.display = 'none'; }, 5000);
+
+        await refreshList();
+      } catch (err) {
+        errEl.style.display = 'block'; errEl.textContent = '❌ Error: ' + err.message;
+      } finally {
+        btn.disabled = false; btn.textContent = '📲 Save & Generate QR Code';
+      }
+    };
+
+    function generateQRPanel(student) {
+      const qrBox = document.getElementById('qr-output');
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, {
+        text:   `RegiSmart|ID:${student.id}|${student.full_name}|${student.grade}`,
+        width:  160, height: 160
+      });
+      const info = document.getElementById('qr-info');
+      info.style.display = 'block';
+      info.innerHTML = `<strong>🎒 ${student.full_name}</strong><br/>${student.grade}
+        ${student.home_address ? '<br/><span style="font-size:0.85rem;">' + student.home_address + '</span>' : ''}`;
+    }
+
+    // =============================================
+    // PARENT SEARCH (debounced)
+    // =============================================
+    window.onParentSearchInput = function () {
+      clearTimeout(parentSearchTimer);
+      const query = (document.getElementById('parent-search-input').value || '').trim();
+      if (!query) { hideParentDropdown(); return; }
+      document.getElementById('parent-search-spinner').style.display = 'flex';
+      parentSearchTimer = setTimeout(async () => { await runParentSearch(query); }, 300);
+    };
+
+    async function runParentSearch(query) {
+      const spinner  = document.getElementById('parent-search-spinner');
+      const dropdown = document.getElementById('parent-dropdown');
+      try {
+        const parents = await searchParents(query);
+        spinner.style.display  = 'none';
+        dropdown.style.display = 'block';
+        if (parents.length === 0) {
+          dropdown.innerHTML = `<div class="dropdown-item text-muted">No parent accounts found for "${escHtml(query)}"</div>`;
+          return;
+        }
+        dropdown.innerHTML = parents.map(p => `
+          <div class="dropdown-item" role="button" tabindex="0"
+               onclick="window.selectParent('${p.id}','${escHtml(p.full_name)}')"
+               onkeydown="if(event.key==='Enter') window.selectParent('${p.id}','${escHtml(p.full_name)}')">
+            👤 ${escHtml(p.full_name)}
+          </div>`).join('');
+      } catch (err) {
+        spinner.style.display  = 'none';
+        dropdown.innerHTML     = `<div class="dropdown-item text-muted">⚠️ Search failed: ${escHtml(err.message)}</div>`;
+        dropdown.style.display = 'block';
+      }
+    }
+
+    function hideParentDropdown() {
+      document.getElementById('parent-search-spinner').style.display = 'none';
+      const dd = document.getElementById('parent-dropdown');
+      dd.style.display = 'none'; dd.innerHTML = '';
+    }
+
+    window.selectParent = function (id, name) {
+      selectedParentId = id; selectedParentName = name;
+      document.getElementById('parent-search-input').value = '';
+      hideParentDropdown();
+      document.getElementById('selected-parent-name').textContent = name;
+      document.getElementById('selected-parent-chip').style.display = 'flex';
+      const errEl = document.getElementById('add-error');
+      if (errEl.textContent.includes('parent')) errEl.style.display = 'none';
+    };
+
+    window.clearParentSelection = function () {
+      selectedParentId = null; selectedParentName = null;
+      document.getElementById('parent-search-input').value = '';
+      document.getElementById('selected-parent-chip').style.display = 'none';
+      document.getElementById('selected-parent-name').textContent   = '';
+      hideParentDropdown();
+    };
+
+    document.addEventListener('click', function (e) {
+      const input    = document.getElementById('parent-search-input');
+      const dropdown = document.getElementById('parent-dropdown');
+      if (input && dropdown && !input.contains(e.target) && !dropdown.contains(e.target))
+        hideParentDropdown();
+    });
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    // =============================================
+    // VIEW STUDENT DETAIL
+    // =============================================
+    window.viewStudent = async function (studentId) {
+      const s = allStudents.find(x => x.id === studentId);
+      if (!s) return;
+      document.getElementById('detail-title').textContent = '🎒 ' + s.full_name;
+      document.getElementById('detail-body').innerHTML    =
+        '<div class="text-center py-3 text-muted"><div class="spinner-border spinner-border-sm me-2"></div> Loading…</div>';
+      detailModal.show();
+
+      try {
+        const [famResult, medResult] = await Promise.all([
+          getFamilyDetails(studentId),
+          getMedicalInfo(studentId)
+        ]);
+        const fam = famResult.data || {};
+        const med = medResult.data || {};
+        const trn = s.transport    || {};
+
+        document.getElementById('detail-body').innerHTML = `
+          <div class="section-title" style="margin-top:0;">Student</div>
+          <div class="detail-grid mb-3">
+            ${di('Name',    s.full_name)}
+            ${di('Grade',   s.grade)}
+            ${di('Address', s.home_address || '—')}
+            ${di('Status',  `<span class="status-badge ${getStatusClass(s.currentStatus)}">${s.currentStatus}</span>`)}
+          </div>
+
+          <div class="section-title">🚐 Transport</div>
+          <div class="detail-grid mb-3">
+            ${di('Active',   trn.is_active ? '✅ Yes' : '❌ No')}
+            ${di('Type',     trn.transport_type || '—')}
+            ${di('Driver',   trn.driver_name    || '—')}
+            ${di('Vehicle',  trn.vehicle_reg    || '—')}
+          </div>
+
+          <div class="section-title">👩 Mother / Guardian 1</div>
+          <div class="detail-grid mb-3">
+            ${di('Name',    fam.mother_name    || '—')}
+            ${di('Cell',    fam.mother_cell    || '—')}
+            ${di('Work',    fam.mother_work    || '—')}
+            ${di('Email',   fam.mother_email   || '—')}
+            ${di('Address', fam.mother_address || '—')}
+          </div>
+
+          <div class="section-title">👨 Father / Guardian 2</div>
+          <div class="detail-grid mb-3">
+            ${di('Name',    fam.father_name    || '—')}
+            ${di('Cell',    fam.father_cell    || '—')}
+            ${di('Work',    fam.father_work    || '—')}
+            ${di('Email',   fam.father_email   || '—')}
+            ${di('Address', fam.father_address || '—')}
+          </div>
+
+          <div class="section-title">🏥 Medical</div>
+          <div class="detail-grid mb-3">
+            ${di('Doctor',        med.doctor_name        || '—')}
+            ${di('Doctor Tel',    med.doctor_tel         || '—')}
+            ${di('Medical Aid',   med.medical_aid        || '—')}
+            ${di('Aid Number',    med.medical_aid_number || '—')}
+            ${di('Allergies',     med.allergies          || '—')}
+          </div>
+
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-warning btn-sm text-white fw-bold"
+                    onclick="detailModal.hide();window.openEdit('${s.id}')">✏️ Edit</button>
+            <button class="btn btn-success btn-sm fw-bold"
+                    onclick="detailModal.hide();window.showQR('${s.id}')">📱 QR Code</button>
+            <button class="btn btn-danger btn-sm fw-bold"
+                    onclick="detailModal.hide();window.openDelete('${s.id}')">🗑 Remove</button>
+          </div>`;
+      } catch (err) {
+        document.getElementById('detail-body').innerHTML =
+          `<div class="alert alert-danger">❌ Error loading details: ${err.message}</div>`;
+      }
+    };
+
+    function di(label, value) {
+      return `<div>
+        <p class="mb-0 text-muted" style="font-size:0.78rem;">${label}</p>
+        <p class="mb-0 fw-bold"    style="font-size:0.92rem;">${value}</p>
+      </div>`;
+    }
+
+    // =============================================
+    // EDIT STUDENT
+    // =============================================
+    window.openEdit = function (studentId) {
+      const s = allStudents.find(x => x.id === studentId);
+      if (!s) return;
+      const splitName = splitFullName(s.full_name);
+      document.getElementById('edit-id').value      = s.id;
+      document.getElementById('edit-name').value    = splitName.name;
+      document.getElementById('edit-surname').value = splitName.surname;
+      document.getElementById('edit-grade').value   = s.grade;
+      document.getElementById('edit-address').value = s.home_address || '';
+      document.getElementById('edit-error').style.display = 'none';
+      editModal.show();
+    };
+
+    window.saveEdit = async function () {
+      const errEl = document.getElementById('edit-error');
+      const btn   = document.getElementById('edit-save-btn');
+      errEl.style.display = 'none';
+
+      const id      = document.getElementById('edit-id').value;
+      const firstName = (document.getElementById('edit-name').value || '').trim();
+      const surname = (document.getElementById('edit-surname').value || '').trim();
+      const name    = joinNameParts(firstName, surname);
+      const grade   = (document.getElementById('edit-grade').value   || '').trim();
+      const address = (document.getElementById('edit-address').value || '').trim();
+
+      if (!firstName || !surname)  { errEl.style.display = 'block'; errEl.textContent = '⚠️ Name and surname are required.';  return; }
+      if (!grade) { errEl.style.display = 'block'; errEl.textContent = '⚠️ Please select a grade.'; return; }
+
+      btn.disabled = true; btn.textContent = '⏳ Saving…';
+
+      try {
+        const result = await updateStudent(id, { full_name: name, grade, home_address: address });
+        if (!result.success) {
+          errEl.style.display = 'block'; errEl.textContent = '❌ ' + result.error; return;
+        }
+        if (!result.student) {
+          await refreshList();
+          const refreshed = allStudents.find(s => s.id === id);
+          const saveWorked = refreshed &&
+            refreshed.full_name === name &&
+            refreshed.grade === grade &&
+            (refreshed.home_address || '') === address;
+
+          if (!saveWorked) {
+            errEl.style.display = 'block';
+            errEl.textContent = '❌ Save failed. The student record was not updated. Check your admin permissions/RLS policies for students.';
+            return;
+          }
+        }
+        editModal.hide();
+        await refreshList();
+      } catch (err) {
+        errEl.style.display = 'block'; errEl.textContent = '❌ Error: ' + err.message;
+      } finally {
+        btn.disabled = false; btn.textContent = '💾 Save Changes';
+      }
+    };
+
+    // =============================================
+    // DELETE STUDENT
+    // =============================================
+    window.openDelete = function (studentId) {
+      const s = allStudents.find(x => x.id === studentId);
+      if (!s) return;
+      pendingDelId = studentId;
+      document.getElementById('delete-name-display').textContent = '🎒 ' + s.full_name + ' (' + s.grade + ')';
+      deleteModal.show();
+    };
+
+    window.confirmDelete = async function () {
+      const btn = document.getElementById('confirm-delete-btn');
+      btn.disabled = true; btn.textContent = '⏳ Removing…';
+
+      try {
+        await supabase.from('attendance_logs').delete().eq('student_id', pendingDelId);
+        await supabase.from('family_details').delete().eq('student_id', pendingDelId);
+        await supabase.from('medical_info').delete().eq('student_id', pendingDelId);
+        // Also clean up transport profile if it exists
+        await supabase.from('transport_profiles').delete().eq('student_id', pendingDelId);
+        const { error } = await supabase.from('students').delete().eq('id', pendingDelId);
+        if (error) throw error;
+
+        deleteModal.hide();
+        pendingDelId = null;
+        await refreshList();
+      } catch (err) {
+        alert('❌ Delete failed: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = '🗑 Yes, Remove';
+      }
+    };
+
+    // =============================================
+    // QR POPUP
+    // =============================================
+    window.showQR = function (studentId) {
+      const s = allStudents.find(x => x.id === studentId);
+      if (!s) return;
+      document.getElementById('qr-modal-title').textContent = '📱 QR — ' + s.full_name;
+      document.getElementById('qr-modal-body').innerHTML    = `
+        <div id="popup-qr" class="qr-output-box d-inline-flex mb-3" style="width:200px;height:200px;"></div>
+        <p class="fw-bold mb-1">${s.full_name}</p>
+        <p class="text-muted mb-0">${s.grade}</p>
+        <p class="text-muted" style="font-size:0.78rem;">ID: ${s.id}</p>`;
+      qrModal.show();
+      setTimeout(() => {
+        new QRCode(document.getElementById('popup-qr'), {
+          text:   `RegiSmart|ID:${s.id}|${s.full_name}|${s.grade}`,
+          width: 180, height: 180
+        });
+      }, 250);
+    };
+
+    // =============================================
+    // KICK OFF
+    // =============================================
+    initPage();
+  </script>
+
+</body>
+</html>

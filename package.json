@@ -1,0 +1,12 @@
+{
+  "name": "regismart",
+  "private": true,
+  "scripts": {
+    "demo": "node server.js",
+    "start": "node server.js",
+    "serve": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.0"
+  }
+}

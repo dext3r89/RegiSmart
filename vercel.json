@@ -1,0 +1,22 @@
+{
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/signup", "destination": "/signup.html" },
+    { "source": "/parent", "destination": "/parent.html" },
+    { "source": "/teacher", "destination": "/teacher.html" },
+    { "source": "/admin", "destination": "/admin.html" }
+  ]
+}

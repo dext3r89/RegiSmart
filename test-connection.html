@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Supabase Connection Test</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .success { color: green; }
+    .error { color: red; }
+    .loading { color: blue; }
+  </style>
+</head>
+<body>
+  <h1>🔗 Supabase Connection Test</h1>
+  
+  <div id="test-status" class="loading">Testing...</div>
+  <pre id="test-results"></pre>
+
+  <script type="module">
+    import supabase from './supabase.js';
+
+    async function runTests() {
+      const results = [];
+      const status = document.getElementById('test-status');
+      const output = document.getElementById('test-results');
+
+      try {
+        // Test 1: Check connection
+        results.push('✅ Supabase client loaded');
+        console.log('Supabase URL:', supabase.supabaseUrl);
+        
+        // Test 2: Query profiles table
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .limit(5);
+        
+        if (profileError) throw profileError;
+        results.push(`✅ Profiles table accessible: ${profiles.length} records`);
+        
+        // Test 3: Query students table
+        const { data: students, error: studentError } = await supabase
+          .from('students')
+          .select('*')
+          .limit(5);
+        
+        if (studentError) throw studentError;
+        results.push(`✅ Students table accessible: ${students.length} records`);
+        
+        // Test 4: Query family_details table
+        const { data: families, error: familyError } = await supabase
+          .from('family_details')
+          .select('*')
+          .limit(5);
+        
+        if (familyError) throw familyError;
+        results.push(`✅ Family details table accessible: ${families.length} records`);
+        
+        // Test 5: Query attendance_logs table
+        const { data: attendance, error: attendanceError } = await supabase
+          .from('attendance_logs')
+          .select('*')
+          .limit(5);
+        
+        if (attendanceError) throw attendanceError;
+        results.push(`✅ Attendance logs table accessible: ${attendance.length} records`);
+
+        status.className = 'success';
+        status.textContent = '✅ All tests passed! Database is connected.';
+        
+      } catch (error) {
+        results.push(`❌ Error: ${error.message}`);
+        status.className = 'error';
+        status.textContent = '❌ Connection failed!';
+      }
+      
+      output.textContent = results.join('\n');
+    }
+
+    runTests();
+  </script>
+</body>
+</html>
