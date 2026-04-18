@@ -23,6 +23,7 @@
     .act-edit   { background:#fef3c7; color:#92400e; }
     .act-qr     { background:#d1fae5; color:#065f46; }
     .act-delete { background:#fee2e2; color:#991b1b; }
+    .act-download { background:#f3e8ff; color:#6d28d9; }
 
     .filter-chip { font-size:0.82rem; padding:4px 14px; border-radius:50px;
                    border:1.5px solid #dde3f0; background:#fff; color:#64748b;
@@ -182,6 +183,14 @@
               </div>
             </div>
             <div id="qr-info" class="info-box mt-3" style="display:none;"></div>
+
+            <!-- Download button -->
+            <button
+              class="btn btn-outline-primary w-100 mt-3"
+              id="download-qr-btn"
+              onclick="window.downloadQR()">
+              ⬇️ Download QR Code
+            </button>
           </div>
         </div>
       </div>
@@ -536,10 +545,11 @@
               ${pickupTag}
             </div>
             <div class="d-flex align-items-center gap-1 flex-wrap">
-              <button class="act-btn act-view"   onclick="window.viewStudent('${s.id}')">👁 View</button>
-              <button class="act-btn act-edit"   onclick="window.openEdit('${s.id}')">✏️ Edit</button>
-              <button class="act-btn act-qr"     onclick="window.showQR('${s.id}')">📱 QR</button>
-              <button class="act-btn act-delete" onclick="window.openDelete('${s.id}')">🗑 Remove</button>
+              <button class="act-btn act-view"     onclick="window.viewStudent('${s.id}')">👁 View</button>
+              <button class="act-btn act-edit"     onclick="window.openEdit('${s.id}')">✏️ Edit</button>
+              <button class="act-btn act-qr"       onclick="window.showQR('${s.id}')">📱 QR</button>
+              <button class="act-btn act-download" onclick="window.downloadQRForStudent('${s.id}')">⬇️ QR</button>
+              <button class="act-btn act-delete"   onclick="window.openDelete('${s.id}')">🗑 Remove</button>
             </div>
           </div>`;
       });
@@ -884,6 +894,150 @@
           width: 180, height: 180
         });
       }, 250);
+    };
+
+    // =============================================
+    // DOWNLOAD QR CODE AS PNG
+    // =============================================
+    window.downloadQR = function () {
+      // Step 1: Find the canvas that qrcodejs renders into #qr-output
+      const qrBox        = document.getElementById('qr-output');
+      const sourceCanvas = qrBox ? qrBox.querySelector('canvas') : null;
+
+      if (!sourceCanvas) {
+        alert('No QR code available to download. Please register a student first.');
+        return;
+      }
+
+      // Step 2: Read the student name from the first line of #qr-info
+      const qrInfo      = document.getElementById('qr-info');
+      const rawText     = qrInfo ? qrInfo.innerText.trim() : '';
+      // innerText gives e.g. "🎒 Thabo Mokoena\nGrade 4\n12 Acacia Street"
+      // Strip the emoji prefix and take only the first line as the name
+      const studentName = rawText.split('\n')[0].replace(/^[^\w]+/, '').trim() || 'Student';
+
+      // Step 3: Build a new canvas — white background + centred QR + name label below
+      const padding   = 24;            // px of white space around the QR image
+      const labelArea = 52;            // px reserved for the student name text
+      const qrSize    = sourceCanvas.width;   // typically 160 px
+
+      const newCanvas  = document.createElement('canvas');
+      newCanvas.width  = qrSize + padding * 2;
+      newCanvas.height = qrSize + padding * 2 + labelArea;
+
+      const ctx = newCanvas.getContext('2d');
+
+      // White background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+      // QR code centred with equal padding on all sides (except below where the label sits)
+      ctx.drawImage(sourceCanvas, padding, padding, qrSize, qrSize);
+
+      // Student name in the label area below the QR
+      ctx.fillStyle    = '#1a237e';    // app navy blue
+      ctx.font         = 'bold 15px Nunito, Arial, sans-serif';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(
+        studentName,
+        newCanvas.width / 2,
+        padding + qrSize + labelArea / 2
+      );
+
+      // Step 4: Encode as PNG, build a filename, and trigger the browser download
+      const dataUrl  = newCanvas.toDataURL('image/png');
+      const safeName = studentName
+        .replace(/[^a-zA-Z0-9\s-]/g, '')   // strip non-alphanumeric chars
+        .trim()
+        .replace(/\s+/g, '_');              // spaces → underscores
+      const link     = document.createElement('a');
+      link.download  = `QR_${safeName || 'student'}.png`;
+      link.href      = dataUrl;
+
+      // Append, click, then remove — avoids popup-blocker issues
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    // =============================================
+    // DOWNLOAD QR FOR ANY STUDENT IN THE LIST
+    // Generates the QR on-the-fly into a hidden
+    // off-screen element, composites it with a white
+    // background and name label, then downloads PNG.
+    // =============================================
+    window.downloadQRForStudent = function (studentId) {
+      const s = allStudents.find(x => x.id === studentId);
+      if (!s) { alert('Student not found.'); return; }
+
+      // Create a hidden off-screen container for qrcodejs to render into
+      const tempBox = document.createElement('div');
+      tempBox.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:160px;height:160px;';
+      document.body.appendChild(tempBox);
+
+      // qrcodejs renders synchronously into the container then adds
+      // both an <img> and a <canvas>. We use the canvas for compositing.
+      new QRCode(tempBox, {
+        text:   `RegiSmart|ID:${s.id}|${s.full_name}|${s.grade}`,
+        width:  160,
+        height: 160
+      });
+
+      // Allow a single animation frame for the canvas to be ready
+      requestAnimationFrame(() => {
+        const sourceCanvas = tempBox.querySelector('canvas');
+
+        if (!sourceCanvas) {
+          document.body.removeChild(tempBox);
+          alert('Could not generate QR code for this student.');
+          return;
+        }
+
+        // Build composite canvas: white background + QR + student name label
+        const padding   = 24;
+        const labelArea = 52;
+        const qrSize    = sourceCanvas.width;  // 160 px
+
+        const newCanvas  = document.createElement('canvas');
+        newCanvas.width  = qrSize + padding * 2;
+        newCanvas.height = qrSize + padding * 2 + labelArea;
+
+        const ctx = newCanvas.getContext('2d');
+
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+        // QR code with padding
+        ctx.drawImage(sourceCanvas, padding, padding, qrSize, qrSize);
+
+        // Student name below QR in app navy blue
+        ctx.fillStyle    = '#1a237e';
+        ctx.font         = 'bold 15px Nunito, Arial, sans-serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+          s.full_name,
+          newCanvas.width / 2,
+          padding + qrSize + labelArea / 2
+        );
+
+        // Trigger download
+        const safeName = s.full_name
+          .replace(/[^a-zA-Z0-9\s-]/g, '')
+          .trim()
+          .replace(/\s+/g, '_');
+        const link    = document.createElement('a');
+        link.download = `QR_${safeName || 'student'}.png`;
+        link.href     = newCanvas.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up the hidden temp container
+        document.body.removeChild(tempBox);
+      });
     };
 
     // =============================================
