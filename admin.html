@@ -529,22 +529,23 @@
         }
 
         html += `
-          <div class="student-row" id="row-${s.id}">
+          <div class="student-row" id="row-${s.id}" style="align-items:flex-start;">
+            <!-- LEFT: name, grade/address, status badges — all stacked vertically -->
             <div style="min-width:0;flex:1;">
               <div class="student-name">
                 ${s.full_name} ${transportBadge}
               </div>
-              <div class="student-grade">
-                ${s.grade}
-                ${s.home_address ? ` &nbsp;·&nbsp; <span style="color:#94a3b8;">${s.home_address}</span>` : ''}
+              <div class="student-grade mb-1">
+                ${s.grade}${s.home_address ? ` &nbsp;·&nbsp; <span style="color:#94a3b8;">${s.home_address}</span>` : ''}
+              </div>
+              <div class="d-flex align-items-center gap-1 flex-wrap mt-1">
+                <span class="status-badge ${getStatusClass(s.currentStatus)}"
+                      style="font-size:0.75rem;padding:3px 10px;">${s.currentStatus}</span>
+                ${pickupTag}
               </div>
             </div>
-            <div class="d-flex align-items-center gap-1 flex-wrap">
-              <span class="status-badge ${getStatusClass(s.currentStatus)}"
-                    style="font-size:0.78rem;padding:4px 12px;">${s.currentStatus}</span>
-              ${pickupTag}
-            </div>
-            <div class="d-flex align-items-center gap-1 flex-wrap">
+            <!-- RIGHT: action buttons -->
+            <div class="d-flex align-items-center gap-1 flex-wrap" style="flex-shrink:0;">
               <button class="act-btn act-view"     onclick="window.viewStudent('${s.id}')">👁 View</button>
               <button class="act-btn act-edit"     onclick="window.openEdit('${s.id}')">✏️ Edit</button>
               <button class="act-btn act-qr"       onclick="window.showQR('${s.id}')">📱 QR</button>
